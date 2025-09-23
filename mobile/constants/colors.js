@@ -51,12 +51,29 @@ const oceanTheme = {
   shadow: "#000000",
 };
 
+const amoledDarkTheme = {
+  primary: "#4E9EFF",      // Bright but soft blue for buttons/links
+  background: "#000000",   // AMOLED black
+  text: "#EAEAEA",         // Slightly off-white for good contrast
+  border: "#1F1F1F",       // Subtle border, not too harsh
+  white: "#FFFFFF",
+  textLight: "#A6A6A6",    // Muted gray for secondary text
+  expense: "#FF4D4F",      // Professional red for errors/expenses
+  income: "#4CAF50",       // Balanced green for income/success
+  card: "#111111",         // Dark gray cards to stand out from background
+  shadow: "#000000",       // Keep shadows dark
+};
+
+
 export const THEMES = {
   coffee: coffeeTheme,
   forest: forestTheme,
   purple: purpleTheme,
   ocean: oceanTheme,
+  dark: amoledDarkTheme,
 };
+
+
 
 // 👇 change this to switch theme
 export const COLORS = THEMES.coffee;

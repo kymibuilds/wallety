@@ -4,6 +4,8 @@ import { useSignUp } from "@clerk/clerk-expo";
 import { Link, useRouter } from "expo-router";
 import { useState } from "react";
 import { styles } from "../../assets/styles/auth.styles";
+import { Image } from "expo-image";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -75,9 +77,10 @@ export default function SignUpScreen() {
             value={code}
             placeholder="Enter your verification code"
             onChangeText={(code) => setCode(code)}
+            style={styles.verificationInput}
           />
-          <TouchableOpacity onPress={onVerifyPress}>
-            <Text>Verify</Text>
+          <TouchableOpacity onPress={onVerifyPress} style={styles.button}>
+            <Text style={styles.buttonText}>Verify</Text>
           </TouchableOpacity>
         </View>
       </>
@@ -85,31 +88,48 @@ export default function SignUpScreen() {
   }
 
   return (
-    <View>
-      <>
-        <Text>Sign up</Text>
+    <KeyboardAwareScrollView
+      style={{ flex: 1 }}
+      contentContainerStyle={{ flexGrow: 1 }}
+      keyboardShouldPersistTaps="handled"
+      enableOnAndroid={true}
+      enableAutomaticScroll={true}
+      extraScrollHeight={100}
+    >
+      <View style={styles.container}>
+        <Image
+          source={require("/home/fumi/codes/projects/wallety/mobile/assets/images/revenue-i2.png")}
+          style={styles.illustration}
+        />
+        <Text style={styles.title}>Create Account</Text>
+
         <TextInput
           autoCapitalize="none"
           value={emailAddress}
           placeholder="Enter email"
           onChangeText={(email) => setEmailAddress(email)}
+          style={styles.input}
         />
+
         <TextInput
           value={password}
           placeholder="Enter password"
           secureTextEntry={true}
           onChangeText={(password) => setPassword(password)}
+          style={styles.input}
         />
-        <TouchableOpacity onPress={onSignUpPress}>
-          <Text>Continue</Text>
+
+        <TouchableOpacity onPress={onSignUpPress} style={styles.button}>
+          <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
-        <View style={{ display: "flex", flexDirection: "row", gap: 3 }}>
-          <Text>Already have an account?</Text>
-          <Link href="/sign-in">
-            <Text>Sign in</Text>
+
+        <View style={styles.footerContainer}>
+          <Text style={styles.footerText}>Already have an account?</Text>
+          <Link href="/sign-in" onPress={() => router.back()}>
+            <Text style={styles.linkText}>Sign in</Text>
           </Link>
         </View>
-      </>
-    </View>
+      </View>
+    </KeyboardAwareScrollView>
   );
 }

@@ -52,7 +52,7 @@ async function deleteTransaction() {
     console.log(error);
   }
 }
-async function getSummary() {
+async function getSummaryById() {
   try {
     const { userId } = req.params;
     const balanceResult = await sql`
@@ -81,5 +81,5 @@ export {
   getTransactionsByUserId,
   createTransaction,
   deleteTransaction,
-  getSummary,
+  getSummaryById,
 };

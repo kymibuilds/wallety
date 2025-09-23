@@ -4,7 +4,7 @@ import {
   getTransactionsByUserId,
   createTransaction,
   deleteTransaction,
-  getSummary,
+  getSummaryById,
 } from "../controllers/transactionsController.js";
 
 const router = Router();
@@ -15,6 +15,6 @@ router.post("/", createTransaction);
 
 router.delete("/:id", deleteTransaction);
 
-router.get("/summary/:userId", getSummary);
+router.get("/summary/:userId", getSummaryById);
 
 export default router;
