@@ -19,98 +19,97 @@ export default function SignUpScreen() {
   const onSignUpPress = async () => {
     if (!isLoaded) return;
 
+    // Start sign-up process using email and password provided
     try {
       await signUp.create({
         emailAddress,
         password,
       });
 
+      // Send user an email with verification code
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
 
+      // Set 'pendingVerification' to true to display second form
+      // and capture OTP code
       setPendingVerification(true);
     } catch (err) {
+      // See https://clerk.com/docs/custom-flows/error-handling
+      // for more info on error handling
       console.error(JSON.stringify(err, null, 2));
-      setError("Something went wrong. Please try again.");
     }
   };
 
+  // Handle submission of verification form
   const onVerifyPress = async () => {
     if (!isLoaded) return;
 
     try {
+      // Use the code the user provided to attempt verification
       const signUpAttempt = await signUp.attemptEmailAddressVerification({
         code,
       });
 
+      // If verification was completed, set the session to active
+      // and redirect the user
       if (signUpAttempt.status === "complete") {
         await setActive({ session: signUpAttempt.createdSessionId });
         router.replace("/");
       } else {
+        // If the status is not complete, check why. User may need to
+        // complete further steps.
         console.error(JSON.stringify(signUpAttempt, null, 2));
       }
     } catch (err) {
+      // See https://clerk.com/docs/custom-flows/error-handling
+      // for more info on error handling
       console.error(JSON.stringify(err, null, 2));
-      setError("Invalid code. Please try again.");
     }
   };
 
   if (pendingVerification) {
     return (
-      <View style={styles.verificationContainer}>
-        <Text style={styles.verificationTitle}>Verify your email</Text>
-        {error ? (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : null}
-        <TextInput
-          style={styles.verificationInput}
-          value={code}
-          placeholder="Enter your verification code"
-          onChangeText={(code) => setCode(code)}
-        />
-        <TouchableOpacity style={styles.button} onPress={onVerifyPress}>
-          <Text style={styles.buttonText}>Verify</Text>
-        </TouchableOpacity>
-      </View>
+      <>
+        <View style={styles.verificationContainer}>
+          <Text style={styles.verificationTitle}>Verify your email</Text>
+          <TextInput
+            value={code}
+            placeholder="Enter your verification code"
+            onChangeText={(code) => setCode(code)}
+          />
+          <TouchableOpacity onPress={onVerifyPress}>
+            <Text>Verify</Text>
+          </TouchableOpacity>
+        </View>
+      </>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Sign up</Text>
-
-      {error ? (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorText}>{error}</Text>
+    <View>
+      <>
+        <Text>Sign up</Text>
+        <TextInput
+          autoCapitalize="none"
+          value={emailAddress}
+          placeholder="Enter email"
+          onChangeText={(email) => setEmailAddress(email)}
+        />
+        <TextInput
+          value={password}
+          placeholder="Enter password"
+          secureTextEntry={true}
+          onChangeText={(password) => setPassword(password)}
+        />
+        <TouchableOpacity onPress={onSignUpPress}>
+          <Text>Continue</Text>
+        </TouchableOpacity>
+        <View style={{ display: "flex", flexDirection: "row", gap: 3 }}>
+          <Text>Already have an account?</Text>
+          <Link href="/sign-in">
+            <Text>Sign in</Text>
+          </Link>
         </View>
-      ) : null}
-
-      <TextInput
-        style={styles.input}
-        autoCapitalize="none"
-        value={emailAddress}
-        placeholder="Enter email"
-        onChangeText={(email) => setEmailAddress(email)}
-      />
-      <TextInput
-        style={styles.input}
-        value={password}
-        placeholder="Enter password"
-        secureTextEntry={true}
-        onChangeText={(password) => setPassword(password)}
-      />
-
-      <TouchableOpacity style={styles.button} onPress={onSignUpPress}>
-        <Text style={styles.buttonText}>Continue</Text>
-      </TouchableOpacity>
-
-      <View style={styles.footerContainer}>
-        <Text style={styles.footerText}>Already have an account?</Text>
-        <Link href="/sign-in">
-          <Text style={styles.linkText}>Sign in</Text>
-        </Link>
-      </View>
+      </>
     </View>
   );
 }
