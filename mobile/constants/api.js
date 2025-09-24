@@ -1,0 +1,1 @@
+export const API_URL = "https://wallety-pazk.onrender.com/api";

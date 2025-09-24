@@ -1,9 +1,10 @@
-import * as React from "react";
+import { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSignUp } from "@clerk/clerk-expo";
-import { Link, useRouter } from "expo-router";
-import { useState } from "react";
-import { styles } from "../../assets/styles/auth.styles";
+import { useRouter } from "expo-router";
+import { styles } from "@/assets/styles/auth.styles.js";
+import { Ionicons } from "@expo/vector-icons";
+import { COLORS } from "../../constants/colors";
 import { Image } from "expo-image";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
@@ -35,9 +36,12 @@ export default function SignUpScreen() {
       // and capture OTP code
       setPendingVerification(true);
     } catch (err) {
-      // See https://clerk.com/docs/custom-flows/error-handling
-      // for more info on error handling
-      console.error(JSON.stringify(err, null, 2));
+      if (err.errors?.[0]?.code === "form_identifier_exists") {
+        setError("That email address is already in use. Please try another.");
+      } else {
+        setError("An error occurred. Please try again.");
+      }
+      console.log(err);
     }
   };
 
@@ -70,20 +74,31 @@ export default function SignUpScreen() {
 
   if (pendingVerification) {
     return (
-      <>
-        <View style={styles.verificationContainer}>
-          <Text style={styles.verificationTitle}>Verify your email</Text>
-          <TextInput
-            value={code}
-            placeholder="Enter your verification code"
-            onChangeText={(code) => setCode(code)}
-            style={styles.verificationInput}
-          />
-          <TouchableOpacity onPress={onVerifyPress} style={styles.button}>
-            <Text style={styles.buttonText}>Verify</Text>
-          </TouchableOpacity>
-        </View>
-      </>
+      <View style={styles.verificationContainer}>
+        <Text style={styles.verificationTitle}>Verify your email</Text>
+
+        {error ? (
+          <View style={styles.errorBox}>
+            <Ionicons name="alert-circle" size={20} color={COLORS.expense} />
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity onPress={() => setError("")}>
+              <Ionicons name="close" size={20} color={COLORS.textLight} />
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        <TextInput
+          style={[styles.verificationInput, error && styles.errorInput]}
+          value={code}
+          placeholder="Enter your verification code"
+          placeholderTextColor="#9A8478"
+          onChangeText={(code) => setCode(code)}
+        />
+
+        <TouchableOpacity onPress={onVerifyPress} style={styles.button}>
+          <Text style={styles.buttonText}>Verify</Text>
+        </TouchableOpacity>
+      </View>
     );
   }
 
@@ -91,43 +106,51 @@ export default function SignUpScreen() {
     <KeyboardAwareScrollView
       style={{ flex: 1 }}
       contentContainerStyle={{ flexGrow: 1 }}
-      keyboardShouldPersistTaps="handled"
       enableOnAndroid={true}
       enableAutomaticScroll={true}
-      extraScrollHeight={100}
     >
       <View style={styles.container}>
-        <Image
-          source={require("/home/fumi/codes/projects/wallety/mobile/assets/images/revenue-i2.png")}
-          style={styles.illustration}
-        />
+        <Image source={require("../../assets/images/revenue-i2.png")} style={styles.illustration} />
+
         <Text style={styles.title}>Create Account</Text>
 
+        {error ? (
+          <View style={styles.errorBox}>
+            <Ionicons name="alert-circle" size={20} color={COLORS.expense} />
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity onPress={() => setError("")}>
+              <Ionicons name="close" size={20} color={COLORS.textLight} />
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
         <TextInput
+          style={[styles.input, error && styles.errorInput]}
           autoCapitalize="none"
           value={emailAddress}
+          placeholderTextColor="#9A8478"
           placeholder="Enter email"
           onChangeText={(email) => setEmailAddress(email)}
-          style={styles.input}
         />
 
         <TextInput
+          style={[styles.input, error && styles.errorInput]}
           value={password}
           placeholder="Enter password"
+          placeholderTextColor="#9A8478"
           secureTextEntry={true}
           onChangeText={(password) => setPassword(password)}
-          style={styles.input}
         />
 
-        <TouchableOpacity onPress={onSignUpPress} style={styles.button}>
-          <Text style={styles.buttonText}>Continue</Text>
+        <TouchableOpacity style={styles.button} onPress={onSignUpPress}>
+          <Text style={styles.buttonText}>Sign Up</Text>
         </TouchableOpacity>
 
         <View style={styles.footerContainer}>
           <Text style={styles.footerText}>Already have an account?</Text>
-          <Link href="/sign-in" onPress={() => router.back()}>
+          <TouchableOpacity onPress={() => router.back()}>
             <Text style={styles.linkText}>Sign in</Text>
-          </Link>
+          </TouchableOpacity>
         </View>
       </View>
     </KeyboardAwareScrollView>
