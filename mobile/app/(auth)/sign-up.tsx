@@ -17,12 +17,16 @@ export default function SignUpScreen() {
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   // Handle submission of sign-up form
   const onSignUpPress = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded || isLoading) return;
 
-    // Start sign-up process using email and password provided
+    setIsLoading(true);
+    setError("");
+
     try {
       await signUp.create({
         emailAddress,
@@ -35,19 +39,55 @@ export default function SignUpScreen() {
       // Set 'pendingVerification' to true to display second form
       // and capture OTP code
       setPendingVerification(true);
-    } catch (err) {
-      if (err.errors?.[0]?.code === "form_identifier_exists") {
-        setError("That email address is already in use. Please try another.");
-      } else {
-        setError("An error occurred. Please try again.");
+    } catch (err: any) {
+      console.error("Sign up error:", err);
+      
+      // Check if err has errors array with safer property access
+      if (err && typeof err === 'object' && 'errors' in err && Array.isArray(err.errors) && err.errors.length > 0) {
+        const firstError = err.errors[0];
+        
+        if (firstError && typeof firstError === 'object' && 'code' in firstError) {
+          if (firstError.code === "form_identifier_exists") {
+            setError("That email address is already in use. Please try another.");
+            return;
+          }
+        }
+        
+        // Check for message in first error
+        if (firstError && typeof firstError === 'object' && 'message' in firstError) {
+          setError(String(firstError.message));
+          return;
+        }
+        
+        // Check for longMessage in first error
+        if (firstError && typeof firstError === 'object' && 'longMessage' in firstError) {
+          setError(String(firstError.longMessage));
+          return;
+        }
       }
-      console.log(err);
+      
+      // Check if err has a message property directly
+      if (err && typeof err === 'object' && 'message' in err) {
+        setError(String(err.message));
+        return;
+      }
+      
+      // Log additional error info for debugging
+      console.error("Error keys:", err ? Object.keys(err) : 'null');
+      
+      // Fallback error message
+      setError("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Handle submission of verification form
   const onVerifyPress = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded || isVerifying) return;
+
+    setIsVerifying(true);
+    setError("");
 
     try {
       // Use the code the user provided to attempt verification
@@ -63,12 +103,83 @@ export default function SignUpScreen() {
       } else {
         // If the status is not complete, check why. User may need to
         // complete further steps.
-        console.error(JSON.stringify(signUpAttempt, null, 2));
+        console.error("Sign up attempt incomplete:", JSON.stringify(signUpAttempt, null, 2));
+        setError("Verification incomplete. Please try again.");
       }
-    } catch (err) {
-      // See https://clerk.com/docs/custom-flows/error-handling
-      // for more info on error handling
-      console.error(JSON.stringify(err, null, 2));
+    } catch (err: any) {
+      // Better error logging - handle the fact that err might not have expected structure
+      console.error("Verification error:", err);
+      
+      // Check if err has a message property
+      if (err && typeof err === 'object' && 'message' in err) {
+        console.error("Error message:", err.message);
+      }
+      
+      // Check if err has errors array
+      if (err && typeof err === 'object' && 'errors' in err && Array.isArray(err.errors)) {
+        console.error("Error array:", err.errors);
+        
+        // Check first error in array
+        if (err.errors.length > 0) {
+          const firstError = err.errors[0];
+          console.error("First error:", firstError);
+          
+          // Check for code property
+          if (firstError && typeof firstError === 'object' && 'code' in firstError) {
+            console.error("Error code:", firstError.code);
+            
+            // Handle specific error codes
+            if (firstError.code === "form_code_incorrect") {
+              setError("Invalid verification code. Please check and try again.");
+              return;
+            } else if (firstError.code === "verification_expired") {
+              setError("Verification code has expired. Please request a new one.");
+              return;
+            }
+          }
+          
+          // Check for longMessage property
+          if (firstError && typeof firstError === 'object' && 'longMessage' in firstError) {
+            console.error("Error long message:", firstError.longMessage);
+            setError(String(firstError.longMessage));
+            return;
+          }
+          
+          // Check for message property in first error
+          if (firstError && typeof firstError === 'object' && 'message' in firstError) {
+            setError(String(firstError.message));
+            return;
+          }
+        }
+      }
+      
+      // Check if it's a network error or other type
+      if (err && typeof err === 'object' && 'name' in err) {
+        console.error("Error name:", err.name);
+      }
+      
+      // Log the full error object properties
+      console.error("Error keys:", err ? Object.keys(err) : 'null');
+      console.error("Error constructor:", err ? err.constructor.name : 'null');
+      
+      // Fallback error message
+      setError("Verification failed. Please check your code and try again.");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // Handle resending verification code
+  const onResendPress = async () => {
+    if (!isLoaded) return;
+    
+    try {
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      setError(""); // Clear any existing errors
+      // Optionally show a success message
+    } catch (err: any) {
+      console.error("Resend error:", err);
+      setError("Failed to resend code. Please try again.");
     }
   };
 
@@ -95,8 +206,21 @@ export default function SignUpScreen() {
           onChangeText={(code) => setCode(code)}
         />
 
-        <TouchableOpacity onPress={onVerifyPress} style={styles.button}>
-          <Text style={styles.buttonText}>Verify</Text>
+        <TouchableOpacity 
+          onPress={onVerifyPress} 
+          style={[styles.button, isVerifying && { opacity: 0.6 }]}
+          disabled={isVerifying}
+        >
+          <Text style={styles.buttonText}>
+            {isVerifying ? "Verifying..." : "Verify"}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          onPress={onResendPress} 
+          style={[styles.button, { backgroundColor: 'transparent', borderWidth: 1, borderColor: COLORS.primary || '#007AFF', marginTop: 10 }]}
+        >
+          <Text style={[styles.buttonText, { color: COLORS.primary || '#007AFF' }]}>Resend Code</Text>
         </TouchableOpacity>
       </View>
     );
@@ -142,8 +266,14 @@ export default function SignUpScreen() {
           onChangeText={(password) => setPassword(password)}
         />
 
-        <TouchableOpacity style={styles.button} onPress={onSignUpPress}>
-          <Text style={styles.buttonText}>Sign Up</Text>
+        <TouchableOpacity 
+          style={[styles.button, isLoading && { opacity: 0.6 }]} 
+          onPress={onSignUpPress}
+          disabled={isLoading}
+        >
+          <Text style={styles.buttonText}>
+            {isLoading ? "Creating Account..." : "Sign Up"}
+          </Text>
         </TouchableOpacity>
 
         <View style={styles.footerContainer}>
