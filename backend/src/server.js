@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 5001;
 const app = express();
 
 //middleware
-app.use(ratelimiter);
+// app.use(ratelimiter);
 app.use(express.json());
 
 if (process.env.NODE_ENV === "production") job.start();
